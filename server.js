@@ -1,3 +1,4 @@
+
 'use strict';
 
 const { networkInterfaces } = require('os');
@@ -54,8 +55,8 @@ app.post('/upload', upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file uploaded.');
     }
-    // Use the request's host header for a more reliable URL
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    // Use the server's network IP to construct a URL accessible from other devices
+    const fileUrl = `http://${serverIp}:${port}/uploads/${req.file.filename}`;
     res.json({ downloadUrl: fileUrl });
 });
 

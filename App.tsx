@@ -8,9 +8,14 @@ import Header from './components/Header';
 import PasteboardInput from './components/PasteboardInput';
 import ItemCard from './components/ItemCard';
 
+const isSecure = window.location.protocol === 'https:';
+const wsProtocol = isSecure ? 'wss' : 'ws';
+const httpProtocol = isSecure ? 'https' : 'http';
 const SERVER_PORT = 3001;
-const SERVER_URL = `ws://${window.location.hostname}:${SERVER_PORT}`;
-const API_URL = `http://${window.location.hostname}:${SERVER_PORT}`;
+const SERVER_HOST = window.location.hostname;
+
+const SERVER_URL = `${wsProtocol}://${SERVER_HOST}:${SERVER_PORT}`;
+const API_URL = `${httpProtocol}://${SERVER_HOST}:${SERVER_PORT}`;
 
 const App: React.FC = () => {
   const [items, setItems] = useState<PasteItem[]>([]);
@@ -21,40 +26,44 @@ const App: React.FC = () => {
   useEffect(() => {
     // Function to connect to WebSocket
     const connect = () => {
-      ws.current = new WebSocket(SERVER_URL);
+      try {
+        ws.current = new WebSocket(SERVER_URL);
 
-      ws.current.onopen = () => {
-        console.log('WebSocket connected');
-      };
+        ws.current.onopen = () => {
+          console.log('WebSocket connected');
+        };
 
-      ws.current.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        if (message.type === 'INIT') {
-          setItems(message.payload);
-        } else if (message.type === 'ADD_ITEM') {
-          setItems((prevItems) => {
-            // Avoid adding duplicates from the sender's own broadcast
-            if (prevItems.some(item => item.id === message.payload.id)) {
-              return prevItems;
-            }
-            return [message.payload, ...prevItems];
-          });
-        }
-      };
+        ws.current.onmessage = (event) => {
+          const message = JSON.parse(event.data);
+          if (message.type === 'INIT') {
+            setItems(message.payload);
+          } else if (message.type === 'ADD_ITEM') {
+            setItems((prevItems) => {
+              // Avoid adding duplicates from the sender's own broadcast
+              if (prevItems.some(item => item.id === message.payload.id)) {
+                return prevItems;
+              }
+              return [message.payload, ...prevItems];
+            });
+          }
+        };
 
-      ws.current.onclose = () => {
-        console.log('WebSocket disconnected. Attempting to reconnect...');
-        // Simple reconnection logic
-        setTimeout(() => {
-          connect();
-        }, 3000);
-      };
+        ws.current.onclose = () => {
+          console.log('WebSocket disconnected. Attempting to reconnect...');
+          // Simple reconnection logic
+          setTimeout(() => {
+            connect();
+          }, 3000);
+        };
 
-      ws.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        // The browser will fire the onclose event automatically after an error,
-        // which will trigger our reconnection logic.
-      };
+        ws.current.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          // The browser will fire the onclose event automatically after an error,
+          // which will trigger our reconnection logic.
+        };
+      } catch (error) {
+        console.error("Failed to create WebSocket connection. Real-time features may be disabled.", error);
+      }
     }
 
     connect();
