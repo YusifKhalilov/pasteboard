@@ -62,7 +62,14 @@ const App: React.FC = () => {
     // Cleanup on component unmount
     return () => {
       if (ws.current) {
-        // Prevent the reconnection logic from firing on intentional closure
+        // When the component unmounts, we prevent the `onclose` handler from
+        // triggering a reconnection attempt. In React's Strict Mode, the
+        // component will be mounted, unmounted, and remounted, which can
+        // cause a connection to be closed immediately after it's opened.
+        // Nullifying the handlers prevents errors and logs from this process.
+        ws.current.onopen = null;
+        ws.current.onmessage = null;
+        ws.current.onerror = null;
         ws.current.onclose = null;
         ws.current.close();
       }
