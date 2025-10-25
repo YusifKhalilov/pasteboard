@@ -19,6 +19,7 @@ const AiResponseDisplay: React.FC<{ response: string }> = ({ response }) => (
 
 const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, isLoading, aiResponse }) => {
   const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleCopy = () => {
       if (item.type !== ItemType.TEXT) return;
@@ -31,6 +32,11 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, isLoading, aiResp
       });
   };
   
+  const handleDownloadClick = () => {
+    setIsDownloading(true);
+    setTimeout(() => setIsDownloading(false), 2500);
+  };
+
   const renderContent = () => {
     switch (item.type) {
       case ItemType.TEXT:
@@ -49,12 +55,32 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, isLoading, aiResp
         );
       case ItemType.FILE:
         return (
-          <div className="flex items-center gap-3 p-2 bg-slate-700 rounded-lg">
+          <div className="flex items-center gap-3 p-2 bg-slate-700/50 rounded-lg">
             <FileIcon className="w-8 h-8 text-slate-400 flex-shrink-0" />
-            <div className='truncate'>
+            <div className='flex-grow truncate'>
               <p className="font-semibold text-slate-200 truncate">{item.content}</p>
               <p className="text-xs text-slate-400">{item.fileType}</p>
             </div>
+            {item.downloadUrl && (
+                <a
+                    href={item.downloadUrl}
+                    download={item.content}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleDownloadClick}
+                    className="flex-shrink-0 p-2 rounded-full text-slate-400 hover:bg-slate-600 hover:text-slate-100 transition-colors"
+                    aria-label="Download file"
+                >
+                    {isDownloading ? (
+                         <svg className="animate-spin h-5 w-5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    ) : (
+                        <DownloadIcon className="w-5 h-5" />
+                    )}
+                </a>
+            )}
           </div>
         );
       default:
@@ -92,7 +118,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, isLoading, aiResp
                     )}
                 </button>
             )}
-            {(item.type === ItemType.FILE || item.type === ItemType.IMAGE) && item.downloadUrl && (
+            {item.type === ItemType.IMAGE && item.downloadUrl && (
                 <a
                     href={item.downloadUrl}
                     download={item.content}
