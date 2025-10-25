@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { InfoIcon } from './Icons';
+import React, { useState, useEffect } from 'react';
+import { InfoIcon, ShareIcon, ClipboardIcon, CheckIcon } from './Icons';
 
 const ManifestoContent: React.FC<{ onClose: () => void }> = ({ onClose }) => (
   <div 
@@ -39,26 +39,85 @@ const ManifestoContent: React.FC<{ onClose: () => void }> = ({ onClose }) => (
   </div>
 );
 
-interface HeaderProps {
-    accessUrl: string;
-}
 
-const Header: React.FC<HeaderProps> = ({ accessUrl }) => {
+const Header: React.FC = () => {
     const [showManifesto, setShowManifesto] = useState(false);
+    const [isShareSupported, setIsShareSupported] = useState(false);
+    const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        setIsShareSupported(!!navigator.share);
+    }, []);
+
+    const handleShare = async () => {
+        const shareData = {
+            title: 'The Pasteboard Manifesto',
+            text: 'Join this local pasteboard to share content on the same network.',
+            url: window.location.href,
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.error("Sharing failed:", err);
+            }
+        } else {
+            // Fallback to copy
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy link.');
+            }
+        }
+    };
+    
+    const getButtonContent = () => {
+        if (copied) {
+            return (
+                <>
+                    <CheckIcon className="w-4 h-4" />
+                    Copied!
+                </>
+            );
+        }
+        if (isShareSupported) {
+            return (
+                <>
+                    <ShareIcon className="w-4 h-4" />
+                    Share
+                </>
+            );
+        }
+        return (
+            <>
+                <ClipboardIcon className="w-4 h-4" />
+                Copy Link
+            </>
+        );
+    }
 
     return (
         <>
             <header className="p-4 sm:p-6 w-full max-w-7xl mx-auto">
                 <div className="flex justify-between items-center">
-                    <div className="flex items-baseline gap-3 sm:gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
                         <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 tracking-tight">
                             Pasteboard
                         </h1>
-                        {accessUrl && (
-                             <span className="hidden sm:inline-block bg-slate-700/80 text-slate-300 text-xs font-mono px-2 py-1 rounded-md select-all">
-                                {accessUrl}
-                            </span>
-                        )}
+                         <button
+                            onClick={handleShare}
+                            className={`hidden sm:flex items-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-200 ${
+                                copied 
+                                ? 'bg-green-500/20 text-green-400'
+                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                            }`}
+                        >
+                            {getButtonContent()}
+                        </button>
                     </div>
                     <button 
                         onClick={() => setShowManifesto(true)}
