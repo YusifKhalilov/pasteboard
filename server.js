@@ -1,4 +1,3 @@
-
 'use strict';
 
 const { networkInterfaces } = require('os');
@@ -84,6 +83,36 @@ wss.on('connection', (ws) => {
                         client.send(JSON.stringify({ type: 'ADD_ITEM', payload: newItem }));
                     }
                 });
+            } else if (data.type === 'DELETE_ITEM') {
+                const { id, downloadUrl } = data.payload;
+                const initialLength = items.length;
+
+                // Delete file from filesystem if it exists
+                if (downloadUrl) {
+                    try {
+                        const filename = path.basename(downloadUrl);
+                        const filePath = path.join(uploadsDir, filename);
+                        if (fs.existsSync(filePath)) {
+                            fs.unlinkSync(filePath);
+                            console.log(`Deleted file: ${filePath}`);
+                        }
+                    } catch (e) {
+                        console.error(`Failed to delete file for item ${id} from URL ${downloadUrl}:`, e);
+                    }
+                }
+                
+                // Remove item from in-memory store
+                items = items.filter(item => item.id !== id);
+                
+                // If an item was actually deleted, broadcast the update
+                if (items.length < initialLength) {
+                    console.log(`Deleted item with id: ${id}`);
+                    wss.clients.forEach((client) => {
+                        if (client.readyState === 1) { // WebSocket.OPEN
+                            client.send(JSON.stringify({ type: 'DELETE_ITEM', payload: { id } }));
+                        }
+                    });
+                }
             }
         } catch (e) {
             console.error('Failed to parse message or invalid message format:', e);

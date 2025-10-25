@@ -45,6 +45,10 @@ const App: React.FC = () => {
               }
               return [message.payload, ...prevItems];
             });
+          } else if (message.type === 'DELETE_ITEM') {
+            setItems((prevItems) => 
+              prevItems.filter(item => item.id !== message.payload.id)
+            );
           }
         };
 
@@ -143,6 +147,24 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleItemDelete = useCallback((id: string) => {
+    const itemToDelete = items.find(item => item.id === id);
+
+    // Optimistically remove from local state
+    setItems(prevItems => prevItems.filter(item => item.id !== id));
+    
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({ 
+        type: 'DELETE_ITEM', 
+        payload: { 
+          id, 
+          // Send downloadUrl so server knows which file to delete from disk
+          downloadUrl: itemToDelete?.downloadUrl 
+        } 
+      }));
+    }
+  }, [items]);
+
   const handleAiAction = useCallback(async (item: PasteItem) => {
     if (!item.file && item.type === ItemType.IMAGE) {
         alert("AI analysis for images is only available on the device that uploaded them.");
@@ -180,6 +202,7 @@ const App: React.FC = () => {
                   key={item.id}
                   item={item}
                   onAiAction={handleAiAction}
+                  onItemDelete={handleItemDelete}
                   isLoading={loadingAiItemId === item.id}
                   aiResponse={aiResponses[item.id]}
                 />

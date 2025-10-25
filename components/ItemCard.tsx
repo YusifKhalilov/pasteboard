@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import type { PasteItem } from '../types';
 import { ItemType } from '../types';
-import { FileIcon, SparklesIcon, ClipboardIcon, CheckIcon, DownloadIcon } from './Icons';
+import { FileIcon, SparklesIcon, ClipboardIcon, CheckIcon, DownloadIcon, TrashIcon } from './Icons';
 
 interface ItemCardProps {
   item: PasteItem;
   onAiAction: (item: PasteItem) => void;
+  onItemDelete: (id: string) => void;
   isLoading: boolean;
   aiResponse?: string;
 }
@@ -17,7 +18,7 @@ const AiResponseDisplay: React.FC<{ response: string }> = ({ response }) => (
 );
 
 
-const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, isLoading, aiResponse }) => {
+const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isLoading, aiResponse }) => {
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -91,10 +92,18 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, isLoading, aiResp
   const canUseAi = process.env.API_KEY && (item.type === ItemType.TEXT || (item.type === ItemType.IMAGE && !!item.file));
 
   return (
-    <div className="bg-slate-800/80 backdrop-blur-sm p-4 rounded-xl border border-slate-700/80 flex flex-col w-full">
-      <div className="flex-grow mb-4">{renderContent()}</div>
+    <div className="relative bg-slate-800/80 backdrop-blur-sm p-3 rounded-xl border border-slate-700/80 flex flex-col w-full">
+       <button 
+        onClick={() => onItemDelete(item.id)}
+        className="absolute top-1.5 right-1.5 p-1.5 rounded-full text-slate-500 hover:bg-slate-700 hover:text-slate-200 transition-colors z-10"
+        aria-label="Delete item"
+      >
+        <TrashIcon className="w-4 h-4" />
+      </button>
+
+      <div className="flex-grow mb-2">{renderContent()}</div>
       
-      <div className="mt-auto space-y-3">
+      <div className="mt-auto space-y-2">
         <div className="flex items-center gap-2">
             {item.type === ItemType.TEXT && (
                 <button
@@ -133,7 +142,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, isLoading, aiResp
         </div>
 
         {(canUseAi || aiResponse) && (
-            <div className="pt-3 border-t border-slate-700">
+            <div className="pt-2 border-t border-slate-700">
                 {canUseAi && (
                     <button
                         onClick={() => onAiAction(item)}
