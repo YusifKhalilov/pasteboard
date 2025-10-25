@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { PasteItem } from './types';
 import { ItemType } from './types';
 import { generateGeminiResponse } from './services/geminiService';
@@ -11,6 +11,36 @@ const App: React.FC = () => {
   const [items, setItems] = useState<PasteItem[]>([]);
   const [loadingAiItemId, setLoadingAiItemId] = useState<string | null>(null);
   const [aiResponses, setAiResponses] = useState<Record<string, string>>({});
+  const [accessUrl, setAccessUrl] = useState<string>('');
+
+  useEffect(() => {
+    // Set initial URL to localhost as a fallback
+    const { protocol, hostname, port } = window.location;
+    const fallbackUrl = `${protocol}//${hostname}${port ? ':' + port : ''}`;
+    setAccessUrl(fallbackUrl);
+
+    // Fetch the local IP from our new Node.js server
+    fetch('http://localhost:3001/api/ip')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.ip) {
+          const newUrl = `${protocol}//${data.ip}${port ? ':' + port : ''}`;
+          setAccessUrl(newUrl);
+        }
+      })
+      .catch(error => {
+        console.warn(
+          'Could not fetch local IP from server. Sharing link will default to current hostname.',
+          'Please ensure the server.js is running.',
+          error
+        );
+      });
+  }, []);
 
   const handleItemsAdd = useCallback((addedItems: (File | string)[]) => {
     const newPasteItems: PasteItem[] = addedItems.map((item) => {
@@ -57,7 +87,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Header accessUrl={accessUrl} />
       <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="space-y-8">
           <PasteboardInput onItemsAdd={handleItemsAdd} />
