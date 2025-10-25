@@ -52,7 +52,8 @@ const App: React.FC = () => {
 
       ws.current.onerror = (error) => {
         console.error('WebSocket error:', error);
-        ws.current?.close();
+        // The browser will fire the onclose event automatically after an error,
+        // which will trigger our reconnection logic.
       };
     }
 
@@ -60,7 +61,11 @@ const App: React.FC = () => {
 
     // Cleanup on component unmount
     return () => {
-      ws.current?.close();
+      if (ws.current) {
+        // Prevent the reconnection logic from firing on intentional closure
+        ws.current.onclose = null;
+        ws.current.close();
+      }
     };
   }, []);
 
@@ -168,7 +173,7 @@ const App: React.FC = () => {
         </div>
       </main>
       <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 text-center text-xs text-slate-500">
-        <p>This pasteboard is ephemeral. Content is not saved and will disappear on refresh.</p>
+        <p>This pasteboard is ephemeral. Content is stored in server memory and will be lost on server restart.</p>
       </footer>
     </div>
   );

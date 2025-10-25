@@ -23,7 +23,7 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use('/uploads', express.static(uploadsDir));
 
-// --- Helper to get local IP for constructing download URLs ---
+// --- Helper to get local IP for logging purposes ---
 const getLocalIp = () => {
     const nets = networkInterfaces();
     for (const name of Object.keys(nets)) {
@@ -54,7 +54,8 @@ app.post('/upload', upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file uploaded.');
     }
-    const fileUrl = `${req.protocol}://${serverIp}:${port}/uploads/${req.file.filename}`;
+    // Use the request's host header for a more reliable URL
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     res.json({ downloadUrl: fileUrl });
 });
 
