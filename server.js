@@ -3,58 +3,100 @@
 const { networkInterfaces } = require('os');
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const { WebSocketServer } = require('ws');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
-const port = 3001; // A different port from the frontend
+const port = 3001;
 
+// --- In-memory store for paste items ---
+let items = [];
+
+// --- CORS and Static File Serving ---
 app.use(cors());
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+}
+app.use('/uploads', express.static(uploadsDir));
 
-app.get('/api/ip', (req, res) => {
+// --- Helper to get local IP for constructing download URLs ---
+const getLocalIp = () => {
     const nets = networkInterfaces();
-    const results = Object.create(null); // Or just '{}'
-
     for (const name of Object.keys(nets)) {
         for (const net of nets[name]) {
-            // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
             const familyV4Value = typeof net.family === 'string' ? 'IPv4' : 4;
             if (net.family === familyV4Value && !net.internal) {
-                if (!results[name]) {
-                    results[name] = [];
-                }
-                results[name].push(net.address);
+                return net.address;
             }
         }
     }
-    
-    // Find the first valid IP address to send back
-    // Common interface names are 'en0', 'eth0', 'Wi-Fi'
-    const interfacePriority = ['en0', 'eth0', 'Wi-Fi'];
-    let ipAddress = null;
+    return 'localhost';
+};
+const serverIp = getLocalIp();
 
-    for (const iface of interfacePriority) {
-        if (results[iface] && results[iface].length > 0) {
-            ipAddress = results[iface][0];
-            break;
-        }
-    }
-
-    // Fallback to the first available IP if priority interfaces are not found
-    if (!ipAddress) {
-        for (const ifaceName in results) {
-            if (results[ifaceName] && results[ifaceName].length > 0) {
-                ipAddress = results[ifaceName][0];
-                break;
-            }
-        }
-    }
-
-    if (ipAddress) {
-        res.json({ ip: ipAddress });
-    } else {
-        res.status(404).json({ error: 'Local IP address not found.' });
+// --- File Uploads with Multer ---
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+        cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
     }
 });
+const upload = multer({ storage: storage });
 
-app.listen(port, () => {
-    console.log(`IP server listening at http://localhost:${port}`);
+app.post('/upload', upload.single('file'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).send('No file uploaded.');
+    }
+    const fileUrl = `${req.protocol}://${serverIp}:${port}/uploads/${req.file.filename}`;
+    res.json({ downloadUrl: fileUrl });
+});
+
+// --- HTTP Server Setup ---
+const server = http.createServer(app);
+
+// --- WebSocket Server Setup ---
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (ws) => {
+    console.log('Client connected');
+
+    // Send initial list of items to the newly connected client
+    ws.send(JSON.stringify({ type: 'INIT', payload: items }));
+
+    ws.on('message', (message) => {
+        try {
+            const data = JSON.parse(message);
+            if (data.type === 'ADD_ITEM') {
+                const newItem = data.payload;
+                items.unshift(newItem); // Add to the beginning of the array
+                // Broadcast the new item to all connected clients
+                wss.clients.forEach((client) => {
+                    if (client.readyState === 1) { // WebSocket.OPEN
+                        client.send(JSON.stringify({ type: 'ADD_ITEM', payload: newItem }));
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Failed to parse message or invalid message format:', e);
+        }
+    });
+
+    ws.on('close', () => {
+        console.log('Client disconnected');
+    });
+
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
+});
+
+server.listen(port, '0.0.0.0', () => {
+    console.log(`Server with WebSocket listening at http://${serverIp}:${port}`);
 });

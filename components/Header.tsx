@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { InfoIcon, ClipboardIcon, CheckIcon } from './Icons';
+import { InfoIcon } from './Icons';
 
 const ManifestoContent: React.FC<{ onClose: () => void }> = ({ onClose }) => (
   <div 
@@ -39,25 +39,9 @@ const ManifestoContent: React.FC<{ onClose: () => void }> = ({ onClose }) => (
   </div>
 );
 
-interface HeaderProps {
-    accessUrl: string;
-}
 
-const Header: React.FC<HeaderProps> = ({ accessUrl }) => {
+const Header: React.FC = () => {
     const [showManifesto, setShowManifesto] = useState(false);
-    const [copied, setCopied] = useState(false);
-
-    const handleCopy = async () => {
-        if (!accessUrl) return;
-        try {
-            await navigator.clipboard.writeText(accessUrl);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy: ', err);
-            alert('Failed to copy link.');
-        }
-    };
 
     return (
         <>
@@ -67,33 +51,6 @@ const Header: React.FC<HeaderProps> = ({ accessUrl }) => {
                         <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 tracking-tight">
                             Pasteboard
                         </h1>
-                        {accessUrl && (
-                             <div className="hidden sm:flex items-center gap-2">
-                                <span className="text-sm font-mono bg-slate-950/50 px-3 py-1.5 rounded-md text-slate-400">
-                                    {accessUrl}
-                                </span>
-                                <button
-                                    onClick={handleCopy}
-                                    className={`flex items-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-200 ${
-                                        copied 
-                                        ? 'bg-green-500/20 text-green-400'
-                                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                                    }`}
-                                >
-                                    {copied ? (
-                                        <>
-                                            <CheckIcon className="w-4 h-4" />
-                                            Copied!
-                                        </>
-                                    ) : (
-                                        <>
-                                            <ClipboardIcon className="w-4 h-4" />
-                                            Copy Link
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        )}
                     </div>
                     <button 
                         onClick={() => setShowManifesto(true)}

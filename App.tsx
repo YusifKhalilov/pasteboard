@@ -1,85 +1,134 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { PasteItem } from './types';
 import { ItemType } from './types';
 import { generateGeminiResponse } from './services/geminiService';
+import { v4 as uuidv4 } from 'uuid';
 
 import Header from './components/Header';
 import PasteboardInput from './components/PasteboardInput';
 import ItemCard from './components/ItemCard';
 
+const SERVER_PORT = 3001;
+const SERVER_URL = `ws://${window.location.hostname}:${SERVER_PORT}`;
+const API_URL = `http://${window.location.hostname}:${SERVER_PORT}`;
+
 const App: React.FC = () => {
   const [items, setItems] = useState<PasteItem[]>([]);
   const [loadingAiItemId, setLoadingAiItemId] = useState<string | null>(null);
   const [aiResponses, setAiResponses] = useState<Record<string, string>>({});
-  const [accessUrl, setAccessUrl] = useState<string>('');
+  const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    // Set initial URL to localhost as a fallback
-    const { protocol, hostname, port } = window.location;
-    const fallbackUrl = `${protocol}//${hostname}${port ? ':' + port : ''}`;
-    
-    // In a Vite dev environment, the server is on a different port than the app
-    const apiPort = 3001;
-    
-    // Fetch the local IP from our new Node.js server
-    fetch(`${protocol}//${hostname}:${apiPort}/api/ip`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
+    // Function to connect to WebSocket
+    const connect = () => {
+      ws.current = new WebSocket(SERVER_URL);
+
+      ws.current.onopen = () => {
+        console.log('WebSocket connected');
+      };
+
+      ws.current.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'INIT') {
+          setItems(message.payload);
+        } else if (message.type === 'ADD_ITEM') {
+          setItems((prevItems) => {
+            // Avoid adding duplicates from the sender's own broadcast
+            if (prevItems.some(item => item.id === message.payload.id)) {
+              return prevItems;
+            }
+            return [message.payload, ...prevItems];
+          });
         }
-        return response.json();
-      })
-      .then(data => {
-        if (data.ip) {
-          const appPort = port ? `:${port}`: '';
-          const newUrl = `${protocol}//${data.ip}${appPort}`;
-          setAccessUrl(newUrl);
-        } else {
-          setAccessUrl(fallbackUrl);
-        }
-      })
-      .catch(error => {
-        console.warn(
-          'Could not fetch local IP from server. Sharing link will default to current hostname.',
-          'Please ensure the server.js is running.',
-          error
-        );
-        setAccessUrl(fallbackUrl);
-      });
+      };
+
+      ws.current.onclose = () => {
+        console.log('WebSocket disconnected. Attempting to reconnect...');
+        // Simple reconnection logic
+        setTimeout(() => {
+          connect();
+        }, 3000);
+      };
+
+      ws.current.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        ws.current?.close();
+      };
+    }
+
+    connect();
+
+    // Cleanup on component unmount
+    return () => {
+      ws.current?.close();
+    };
   }, []);
 
-  const handleItemsAdd = useCallback((addedItems: (File | string)[]) => {
-    const newPasteItems: PasteItem[] = addedItems.map((item) => {
-      const id = `${Date.now()}-${Math.random()}`;
+  const handleItemsAdd = useCallback(async (addedItems: (File | string)[]) => {
+    for (const item of addedItems) {
+      const id = uuidv4();
+      let newItem: PasteItem;
+
       if (typeof item === 'string') {
-        return { id, type: ItemType.TEXT, content: item };
+        newItem = { id, type: ItemType.TEXT, content: item };
       } else {
-        if (item.type.startsWith('image/')) {
-          return {
-            id,
-            type: ItemType.IMAGE,
-            content: item.name,
-            dataUrl: URL.createObjectURL(item),
-            fileType: item.type,
-            file: item,
-          };
-        } else {
-          return {
-            id,
-            type: ItemType.FILE,
-            content: item.name,
-            fileType: item.type,
-            file: item,
-          };
+        const formData = new FormData();
+        formData.append('file', item);
+        try {
+          const response = await fetch(`${API_URL}/upload`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) throw new Error('File upload failed');
+          
+          const { downloadUrl } = await response.json();
+
+          if (item.type.startsWith('image/')) {
+            newItem = {
+              id,
+              type: ItemType.IMAGE,
+              content: item.name,
+              downloadUrl: downloadUrl,
+              fileType: item.type,
+              file: item, // Keep local file object for AI processing
+            };
+          } else {
+            newItem = {
+              id,
+              type: ItemType.FILE,
+              content: item.name,
+              downloadUrl: downloadUrl,
+              fileType: item.type,
+              file: item,
+            };
+          }
+        } catch (error) {
+          console.error('Error uploading file:', error);
+          alert(`Failed to upload file: ${item.name}`);
+          continue; // Skip this item
         }
       }
-    });
-    setItems((prevItems) => [...newPasteItems, ...prevItems]);
+      
+      // Optimistically update local state for instant feedback
+      setItems((prevItems) => [newItem, ...prevItems]);
+
+      // Send to WebSocket server for broadcast
+      if (ws.current?.readyState === WebSocket.OPEN) {
+        // We don't send the file object over the network
+        const { file, ...payload } = newItem;
+        ws.current.send(JSON.stringify({ type: 'ADD_ITEM', payload }));
+      }
+    }
   }, []);
 
   const handleAiAction = useCallback(async (item: PasteItem) => {
+    if (!item.file && item.type === ItemType.IMAGE) {
+        alert("AI analysis for images is only available on the device that uploaded them.");
+        return;
+    }
     setLoadingAiItemId(item.id);
-    setAiResponses(prev => ({...prev, [item.id]: ''})); // Clear previous response
+    setAiResponses(prev => ({...prev, [item.id]: ''}));
     try {
       const response = await generateGeminiResponse(item);
       setAiResponses(prev => ({ ...prev, [item.id]: response }));
@@ -93,7 +142,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header accessUrl={accessUrl} />
+      <Header />
       <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="space-y-8">
           <PasteboardInput onItemsAdd={handleItemsAdd} />

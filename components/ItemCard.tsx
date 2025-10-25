@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { PasteItem } from '../types';
 import { ItemType } from '../types';
-import { FileIcon, SparklesIcon } from './Icons';
+import { FileIcon, SparklesIcon, ClipboardIcon, CheckIcon, DownloadIcon } from './Icons';
 
 interface ItemCardProps {
   item: PasteItem;
@@ -18,6 +18,18 @@ const AiResponseDisplay: React.FC<{ response: string }> = ({ response }) => (
 
 
 const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, isLoading, aiResponse }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+      if (item.type !== ItemType.TEXT) return;
+      navigator.clipboard.writeText(item.content).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+      }).catch(err => {
+          console.error('Failed to copy text: ', err);
+          alert('Failed to copy text.');
+      });
+  };
   
   const renderContent = () => {
     switch (item.type) {
@@ -30,7 +42,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, isLoading, aiResp
       case ItemType.IMAGE:
         return (
           <img
-            src={item.dataUrl}
+            src={item.downloadUrl}
             alt={item.content}
             className="rounded-lg object-contain max-h-96 w-full"
           />
@@ -50,15 +62,52 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, isLoading, aiResp
     }
   };
 
-  const canUseAi = process.env.API_KEY && (item.type === ItemType.TEXT || item.type === ItemType.IMAGE);
+  const canUseAi = process.env.API_KEY && (item.type === ItemType.TEXT || (item.type === ItemType.IMAGE && !!item.file));
 
   return (
-    <div className="bg-slate-800/80 backdrop-blur-sm p-4 rounded-xl border border-slate-700/80 transition-colors w-full">
-      <div className="flex flex-col h-full">
-        <div className="flex-grow">{renderContent()}</div>
-        
+    <div className="bg-slate-800/80 backdrop-blur-sm p-4 rounded-xl border border-slate-700/80 flex flex-col w-full">
+      <div className="flex-grow mb-4">{renderContent()}</div>
+      
+      <div className="mt-auto space-y-3">
+        <div className="flex items-center gap-2">
+            {item.type === ItemType.TEXT && (
+                <button
+                    onClick={handleCopy}
+                    className={`flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-200 ${
+                        copied 
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                >
+                    {copied ? (
+                        <>
+                            <CheckIcon className="w-4 h-4" />
+                            Copied
+                        </>
+                    ) : (
+                        <>
+                            <ClipboardIcon className="w-4 h-4" />
+                            Copy
+                        </>
+                    )}
+                </button>
+            )}
+            {(item.type === ItemType.FILE || item.type === ItemType.IMAGE) && item.downloadUrl && (
+                <a
+                    href={item.downloadUrl}
+                    download={item.content}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-200 bg-slate-700 text-slate-300 hover:bg-slate-600"
+                >
+                    <DownloadIcon className="w-4 h-4" />
+                    Download
+                </a>
+            )}
+        </div>
+
         {(canUseAi || aiResponse) && (
-            <div className="mt-4 pt-4 border-t border-slate-700">
+            <div className="pt-3 border-t border-slate-700">
                 {canUseAi && (
                     <button
                         onClick={() => onAiAction(item)}
@@ -81,11 +130,9 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, isLoading, aiResp
                         )}
                     </button>
                 )}
-
                 {aiResponse && !isLoading && <AiResponseDisplay response={aiResponse} />}
             </div>
         )}
-
       </div>
     </div>
   );
