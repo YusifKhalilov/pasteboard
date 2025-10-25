@@ -17,10 +17,12 @@ const App: React.FC = () => {
     // Set initial URL to localhost as a fallback
     const { protocol, hostname, port } = window.location;
     const fallbackUrl = `${protocol}//${hostname}${port ? ':' + port : ''}`;
-    setAccessUrl(fallbackUrl);
-
+    
+    // In a Vite dev environment, the server is on a different port than the app
+    const apiPort = 3001;
+    
     // Fetch the local IP from our new Node.js server
-    fetch('http://localhost:3001/api/ip')
+    fetch(`${protocol}//${hostname}:${apiPort}/api/ip`)
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -29,8 +31,11 @@ const App: React.FC = () => {
       })
       .then(data => {
         if (data.ip) {
-          const newUrl = `${protocol}//${data.ip}${port ? ':' + port : ''}`;
+          const appPort = port ? `:${port}`: '';
+          const newUrl = `${protocol}//${data.ip}${appPort}`;
           setAccessUrl(newUrl);
+        } else {
+          setAccessUrl(fallbackUrl);
         }
       })
       .catch(error => {
@@ -39,6 +44,7 @@ const App: React.FC = () => {
           'Please ensure the server.js is running.',
           error
         );
+        setAccessUrl(fallbackUrl);
       });
   }, []);
 
