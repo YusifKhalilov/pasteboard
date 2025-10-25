@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import type { PasteItem } from './types';
 import { ItemType } from './types';
@@ -9,12 +10,8 @@ import ItemCard from './components/ItemCard';
 
 
 const getLocalIP = (): Promise<string> => {
-  console.log("getLocalIP: Attempting to find local IP via WebRTC...");
+  console.log("getLocalIP: Attempting to find local IP or hostname via WebRTC...");
   return new Promise((resolve, reject) => {
-    // NOTE: This is a trick to get the local IP address using WebRTC.
-    // It might not work in all browsers or network configurations,
-    // especially with increased browser privacy features.
-    
     const RTCPeerConnection = window.RTCPeerConnection || (window as any).mozRTCPeerConnection || (window as any).webkitRTCPeerConnection;
     if (!RTCPeerConnection) {
         console.error("getLocalIP: WebRTC is not supported by this browser.");
@@ -24,25 +21,24 @@ const getLocalIP = (): Promise<string> => {
     console.log("getLocalIP: RTCPeerConnection is available.");
 
     const pc = new RTCPeerConnection({ iceServers: [] });
-    let ipResolved = false;
+    let candidateFound = false;
 
     const resolveOnce = (ip: string) => {
-      if (!ipResolved) {
-        console.log(`getLocalIP: Found local IP: ${ip}`);
-        ipResolved = true;
+      if (!candidateFound) {
+        console.log(`getLocalIP: Found usable local network address: ${ip}`);
+        candidateFound = true;
         pc.close();
         resolve(ip);
       }
     };
 
     pc.onicecandidate = (ice) => {
-      if (ipResolved) {
+      if (candidateFound) {
         return;
       }
       if (!ice || !ice.candidate || !ice.candidate.candidate) {
-        // This is normal, it fires with a null candidate at the end.
         if (ice && !ice.candidate) {
-            console.log("getLocalIP: onicecandidate fired with null candidate, which is normal at the end of gathering.");
+            console.log("getLocalIP: onicecandidate gathering complete.");
         }
         return;
       }
@@ -50,24 +46,32 @@ const getLocalIP = (): Promise<string> => {
       const candidateStr = ice.candidate.candidate;
       console.log(`getLocalIP: onicecandidate found a candidate: ${candidateStr}`);
       
-      // Regex for private IPv4 addresses, which is what we want for LAN access.
-      // This is more specific than a generic IPv4 regex and avoids other candidates.
+      // Regex for private IPv4 addresses.
       const ipRegex = /(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})/;
-      const match = ipRegex.exec(candidateStr);
+      const ipMatch = ipRegex.exec(candidateStr);
 
-      if (match && match[0]) {
-        console.log(`getLocalIP: Regex matched an IP address: ${match[0]}`);
-        resolveOnce(match[0]);
-      } else {
-        console.log("getLocalIP: Candidate did not match private IP regex.");
+      if (ipMatch && ipMatch[0]) {
+        console.log(`getLocalIP: Matched private IP address: ${ipMatch[0]}`);
+        resolveOnce(ipMatch[0]);
+        return;
       }
+
+      // Fallback regex for mDNS hostnames, used by modern browsers for privacy.
+      const mdnsRegex = /([a-f0-9\-]+\.local)/;
+      const mdnsMatch = mdnsRegex.exec(candidateStr);
+
+      if (mdnsMatch && mdnsMatch[0]) {
+        console.log(`getLocalIP: Matched mDNS hostname: ${mdnsMatch[0]}`);
+        resolveOnce(mdnsMatch[0]);
+        return;
+      }
+      
+      console.log("getLocalIP: Candidate was not a usable private IP or mDNS hostname.");
     };
     
-    // Create a bogus data channel to trigger ICE candidate gathering.
     pc.createDataChannel('');
-    console.log("getLocalIP: Created data channel.");
+    console.log("getLocalIP: Created data channel to trigger ICE gathering.");
     
-    // Create an offer.
     pc.createOffer()
       .then(offer => {
         console.log("getLocalIP: Created offer, setting local description.");
@@ -78,12 +82,11 @@ const getLocalIP = (): Promise<string> => {
         reject(err)
       });
 
-    // Fallback timeout in case we can't find an IP.
     setTimeout(() => {
-        if (!ipResolved) {
-            console.warn("getLocalIP: Timeout reached. Could not find a suitable local IP address via WebRTC.");
+        if (!candidateFound) {
+            console.warn("getLocalIP: Timeout reached. Could not find a suitable local network address.");
             pc.close();
-            reject(new Error('Timeout: Could not find local IP address via WebRTC. This can happen due to browser privacy settings or network configuration.'));
+            reject(new Error('Timeout: Could not find local IP or hostname via WebRTC.'));
         }
     }, 1500);
   });
@@ -97,17 +100,16 @@ const App: React.FC = () => {
   const [accessUrl, setAccessUrl] = useState('');
 
   useEffect(() => {
-    console.log("App.useEffect: Fetching local IP...");
     getLocalIP()
-      .then(ip => {
-        console.log(`App.useEffect: Successfully got local IP: ${ip}`);
+      .then(ipOrHost => {
         const port = window.location.port;
-        const url = port ? `${ip}:${port}` : ip;
+        const protocol = window.location.protocol;
+        const url = port ? `${protocol}//${ipOrHost}:${port}` : `${protocol}//${ipOrHost}`;
         console.log(`App.useEffect: Setting access URL to: ${url}`);
         setAccessUrl(url);
       })
       .catch(error => {
-        console.warn("App.useEffect: Could not determine local IP. Falling back to hostname.", error);
+        console.warn("App.useEffect: Could not determine local IP/hostname. Falling back to window.location.host.", error);
         setAccessUrl(window.location.host);
       });
   }, []);
