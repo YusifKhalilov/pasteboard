@@ -3,14 +3,6 @@ import { GoogleGenAI } from "@google/genai";
 import type { PasteItem } from '../types';
 import { ItemType } from '../types';
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  console.warn("Gemini API key not found. AI features will be disabled.");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
-
 const fileToGenerativePart = async (file: File) => {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
     const reader = new FileReader();
@@ -23,9 +15,14 @@ const fileToGenerativePart = async (file: File) => {
 };
 
 export const generateGeminiResponse = async (item: PasteItem): Promise<string> => {
+  const API_KEY = process.env.API_KEY;
+
   if (!API_KEY) {
-    return "API key not configured. Please set up your environment.";
+    console.warn("Gemini API key not found. AI features are disabled.");
+    return "AI features are disabled. Please configure a Gemini API key to use this functionality.";
   }
+
+  const ai = new GoogleGenAI({ apiKey: API_KEY });
 
   try {
     if (item.type === ItemType.TEXT) {
