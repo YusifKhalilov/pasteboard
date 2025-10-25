@@ -6,7 +6,7 @@
   "scripts": {
     "start": "concurrently \"npm:start:backend\" \"npm:start:frontend\"",
     "start:backend": "node server.js",
-    "start:frontend": "vite --port 3000"
+    "start:frontend": "vite"
   },
   "dependencies": {
     "@google/genai": "^1.27.0",
