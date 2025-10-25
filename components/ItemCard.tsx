@@ -12,8 +12,8 @@ interface ItemCardProps {
 }
 
 const AiResponseDisplay: React.FC<{ response: string }> = ({ response }) => (
-    <div className="mt-3 pt-3 border-t border-slate-700">
-        <p className="text-sm text-indigo-300 whitespace-pre-wrap font-sans">{response}</p>
+    <div className="mt-3 pt-3">
+        <p className="text-sm text-fuchsia-300 whitespace-pre-wrap font-sans">{response}</p>
     </div>
 );
 
@@ -35,14 +35,14 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
   
   const handleDownloadClick = () => {
     setIsDownloading(true);
-    setTimeout(() => setIsDownloading(false), 2500);
+    setTimeout(() => setIsDownloading(false), 3000);
   };
 
   const renderContent = () => {
     switch (item.type) {
       case ItemType.TEXT:
         return (
-          <p className="text-slate-300 whitespace-pre-wrap break-words font-mono text-sm">
+          <p className="text-indigo-200 whitespace-pre-wrap break-words font-mono text-sm">
             {item.content}
           </p>
         );
@@ -56,32 +56,12 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
         );
       case ItemType.FILE:
         return (
-          <div className="flex items-center gap-3 p-2 bg-slate-700/50 rounded-lg">
-            <FileIcon className="w-8 h-8 text-slate-400 flex-shrink-0" />
-            <div className='flex-grow truncate'>
-              <p className="font-semibold text-slate-200 truncate">{item.content}</p>
-              <p className="text-xs text-slate-400">{item.fileType}</p>
+          <div className="flex items-center gap-4">
+            <FileIcon className="w-10 h-10 text-indigo-400 flex-shrink-0" />
+            <div className='flex-grow truncate min-w-0'>
+              <p className="font-semibold text-indigo-100 truncate">{item.content}</p>
+              <p className="text-xs text-indigo-400">{item.fileType}</p>
             </div>
-            {item.downloadUrl && (
-                <a
-                    href={item.downloadUrl}
-                    download={item.content}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleDownloadClick}
-                    className="flex-shrink-0 p-2 rounded-full text-slate-400 hover:bg-slate-600 hover:text-slate-100 transition-colors"
-                    aria-label="Download file"
-                >
-                    {isDownloading ? (
-                         <svg className="animate-spin h-5 w-5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    ) : (
-                        <DownloadIcon className="w-5 h-5" />
-                    )}
-                </a>
-            )}
           </div>
         );
       default:
@@ -92,16 +72,16 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
   const canUseAi = process.env.API_KEY && (item.type === ItemType.TEXT || (item.type === ItemType.IMAGE && !!item.file));
 
   return (
-    <div className="relative bg-slate-800/80 backdrop-blur-sm p-3 rounded-xl border border-slate-700/80 flex flex-col w-full">
+    <div className="relative bg-slate-900/70 backdrop-blur-sm p-4 rounded-xl flex flex-col w-full">
        <button 
         onClick={() => onItemDelete(item.id)}
-        className="absolute top-1.5 right-1.5 p-1.5 rounded-full text-slate-500 hover:bg-slate-700 hover:text-slate-200 transition-colors z-10"
+        className="absolute top-1.5 right-1.5 p-1.5 rounded-full text-indigo-300 hover:bg-slate-800 hover:text-white transition-colors z-10"
         aria-label="Delete item"
       >
         <TrashIcon className="w-4 h-4" />
       </button>
 
-      <div className="flex-grow mb-2">{renderContent()}</div>
+      <div className="flex-grow mb-3">{renderContent()}</div>
       
       <div className="mt-auto space-y-2">
         <div className="flex items-center gap-2">
@@ -110,8 +90,8 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
                     onClick={handleCopy}
                     className={`flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-200 ${
                         copied 
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-sky-500/20 text-sky-400'
+                        : 'bg-slate-800 text-indigo-200 hover:bg-slate-700'
                     }`}
                 >
                     {copied ? (
@@ -127,31 +107,48 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
                     )}
                 </button>
             )}
-            {item.type === ItemType.IMAGE && item.downloadUrl && (
+             {(item.type === ItemType.IMAGE || item.type === ItemType.FILE) && item.downloadUrl && (
                 <a
                     href={item.downloadUrl}
                     download={item.content}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-200 bg-slate-700 text-slate-300 hover:bg-slate-600"
+                    onClick={handleDownloadClick}
+                    className={`flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-200 ${
+                        isDownloading
+                        ? 'bg-indigo-500/20 text-indigo-300 cursor-wait'
+                        : 'bg-slate-800 text-indigo-200 hover:bg-slate-700'
+                    }`}
                 >
-                    <DownloadIcon className="w-4 h-4" />
-                    Download
+                    {isDownloading ? (
+                        <>
+                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Downloading...</span>
+                        </>
+                    ) : (
+                         <>
+                            <DownloadIcon className="w-4 h-4" />
+                            <span>Download</span>
+                         </>
+                    )}
                 </a>
             )}
         </div>
 
         {(canUseAi || aiResponse) && (
-            <div className="pt-2 border-t border-slate-700">
+            <div className="mt-2 pt-2">
                 {canUseAi && (
                     <button
                         onClick={() => onAiAction(item)}
                         disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-indigo-400 bg-indigo-500/20 rounded-md hover:bg-indigo-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-fuchsia-400 bg-fuchsia-500/20 rounded-md hover:bg-fuchsia-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isLoading ? (
                             <>
-                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-fuchsia-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>

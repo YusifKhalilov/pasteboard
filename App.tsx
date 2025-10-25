@@ -191,7 +191,7 @@ const App: React.FC = () => {
           <PasteboardInput onItemsAdd={handleItemsAdd} />
 
           {items.length === 0 ? (
-            <div className="text-center py-16 text-slate-500">
+            <div className="text-center py-16 text-indigo-400">
               <p className="text-lg">Your pasteboard is empty.</p>
               <p>It's a blank canvas for your thoughts.</p>
             </div>
@@ -211,7 +211,7 @@ const App: React.FC = () => {
           )}
         </div>
       </main>
-      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 text-center text-xs text-slate-500">
+      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 text-center text-xs text-indigo-500">
         <p>This pasteboard is ephemeral. Content is stored in server memory and will be lost on server restart.</p>
       </footer>
     </div>
