@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { PasteItem } from './types';
 import { ItemType } from './types';
-import { generateGeminiResponse } from './services/geminiService';
 import { v4 as uuidv4 } from 'uuid';
 
 import Header from './components/Header';
@@ -20,8 +19,6 @@ const API_URL = `${httpProtocol}://${SERVER_HOST}:${SERVER_PORT}`;
 const App: React.FC = () => {
   const [items, setItems] = useState<PasteItem[]>([]);
   const [serverAddress, setServerAddress] = useState<string>('');
-  const [loadingAiItemId, setLoadingAiItemId] = useState<string | null>(null);
-  const [aiResponses, setAiResponses] = useState<Record<string, string>>({});
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -53,7 +50,6 @@ const App: React.FC = () => {
             );
           } else if (message.type === 'RESET_ITEMS') {
             setItems([]);
-            setAiResponses({});
           }
         };
 
@@ -121,7 +117,6 @@ const App: React.FC = () => {
               content: item.name,
               downloadUrl: downloadUrl,
               fileType: item.type,
-              file: item, // Keep local file object for AI processing
             };
           } else {
             newItem = {
@@ -130,7 +125,6 @@ const App: React.FC = () => {
               content: item.name,
               downloadUrl: downloadUrl,
               fileType: item.type,
-              file: item,
             };
           }
         } catch (error) {
@@ -145,9 +139,7 @@ const App: React.FC = () => {
 
       // Send to WebSocket server for broadcast
       if (ws.current?.readyState === WebSocket.OPEN) {
-        // We don't send the file object over the network
-        const { file, ...payload } = newItem;
-        ws.current.send(JSON.stringify({ type: 'ADD_ITEM', payload }));
+        ws.current.send(JSON.stringify({ type: 'ADD_ITEM', payload: newItem }));
       }
     }
   }, []);
@@ -169,24 +161,6 @@ const App: React.FC = () => {
       }));
     }
   }, [items]);
-
-  const handleAiAction = useCallback(async (item: PasteItem) => {
-    if (!item.file && item.type === ItemType.IMAGE) {
-        alert("AI analysis for images is only available on the device that uploaded them.");
-        return;
-    }
-    setLoadingAiItemId(item.id);
-    setAiResponses(prev => ({...prev, [item.id]: ''}));
-    try {
-      const response = await generateGeminiResponse(item);
-      setAiResponses(prev => ({ ...prev, [item.id]: response }));
-    } catch (error) {
-      console.error("AI action failed", error);
-      setAiResponses(prev => ({ ...prev, [item.id]: "Sorry, something went wrong." }));
-    } finally {
-      setLoadingAiItemId(null);
-    }
-  }, []);
 
   const handleReset = useCallback(() => {
     if (window.confirm('Are you sure you want to delete all items? This action cannot be undone.')) {
@@ -215,10 +189,7 @@ const App: React.FC = () => {
                 <ItemCard
                   key={item.id}
                   item={item}
-                  onAiAction={handleAiAction}
                   onItemDelete={handleItemDelete}
-                  isLoading={loadingAiItemId === item.id}
-                  aiResponse={aiResponses[item.id]}
                 />
               ))}
             </div>

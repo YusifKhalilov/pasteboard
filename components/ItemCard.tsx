@@ -1,24 +1,14 @@
 import React, { useState } from 'react';
 import type { PasteItem } from '../types';
 import { ItemType } from '../types';
-import { FileIcon, SparklesIcon, ClipboardIcon, CheckIcon, DownloadIcon, TrashIcon } from './Icons';
+import { FileIcon, ClipboardIcon, CheckIcon, DownloadIcon, TrashIcon } from './Icons';
 
 interface ItemCardProps {
   item: PasteItem;
-  onAiAction: (item: PasteItem) => void;
   onItemDelete: (id: string) => void;
-  isLoading: boolean;
-  aiResponse?: string;
 }
 
-const AiResponseDisplay: React.FC<{ response: string }> = ({ response }) => (
-    <div className="mt-3 pt-3">
-        <p className="text-sm text-[#C37DFF] whitespace-pre-wrap font-sans">{response}</p>
-    </div>
-);
-
-
-const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isLoading, aiResponse }) => {
+const ItemCard: React.FC<ItemCardProps> = ({ item, onItemDelete }) => {
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -69,8 +59,6 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
     }
   };
 
-  const canUseAi = process.env.API_KEY && (item.type === ItemType.TEXT || (item.type === ItemType.IMAGE && !!item.file));
-
   return (
     <div className="relative bg-[#0F2D27]/70 backdrop-blur-sm p-4 rounded-xl flex flex-col w-full">
        <button 
@@ -83,7 +71,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
 
       <div className="flex-grow mb-3">{renderContent()}</div>
       
-      <div className="mt-auto space-y-2">
+      <div className="mt-auto">
         <div className="flex items-center gap-2">
             {item.type === ItemType.TEXT && (
                 <button
@@ -137,34 +125,6 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
                 </a>
             )}
         </div>
-
-        {(canUseAi || aiResponse) && (
-            <div className="mt-2 pt-2">
-                {canUseAi && (
-                    <button
-                        onClick={() => onAiAction(item)}
-                        disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-[#C37DFF] bg-[#C37DFF]/20 rounded-md hover:bg-[#C37DFF]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isLoading ? (
-                            <>
-                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-[#C37DFF]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Thinking...
-                            </>
-                        ) : (
-                            <>
-                                <SparklesIcon className="w-4 h-4" />
-                                {item.type === ItemType.TEXT ? 'Summarize with AI' : 'Describe with AI'}
-                            </>
-                        )}
-                    </button>
-                )}
-                {aiResponse && !isLoading && <AiResponseDisplay response={aiResponse} />}
-            </div>
-        )}
       </div>
     </div>
   );
