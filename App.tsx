@@ -19,6 +19,7 @@ const API_URL = `${httpProtocol}://${SERVER_HOST}:${SERVER_PORT}`;
 
 const App: React.FC = () => {
   const [items, setItems] = useState<PasteItem[]>([]);
+  const [serverAddress, setServerAddress] = useState<string>('');
   const [loadingAiItemId, setLoadingAiItemId] = useState<string | null>(null);
   const [aiResponses, setAiResponses] = useState<Record<string, string>>({});
   const ws = useRef<WebSocket | null>(null);
@@ -36,7 +37,8 @@ const App: React.FC = () => {
         ws.current.onmessage = (event) => {
           const message = JSON.parse(event.data);
           if (message.type === 'INIT') {
-            setItems(message.payload);
+            setItems(message.payload.items);
+            setServerAddress(message.payload.serverIp);
           } else if (message.type === 'ADD_ITEM') {
             setItems((prevItems) => {
               // Avoid adding duplicates from the sender's own broadcast
@@ -185,7 +187,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Header serverAddress={serverAddress} />
       <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="space-y-8">
           <PasteboardInput onItemsAdd={handleItemsAdd} />

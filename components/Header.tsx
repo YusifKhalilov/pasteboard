@@ -7,11 +7,11 @@ const ManifestoContent: React.FC<{ onClose: () => void }> = ({ onClose }) => (
     onClick={onClose}
   >
     <div 
-      className="bg-slate-900 rounded-2xl max-w-2xl w-full p-6 md:p-8 text-indigo-200 max-h-[90vh] overflow-y-auto"
+      className="bg-[#1E1A33] rounded-2xl max-w-2xl w-full p-6 md:p-8 text-[#C7B6FF] max-h-[90vh] overflow-y-auto"
       onClick={(e) => e.stopPropagation()}
     >
       <h2 className="text-2xl font-bold text-white mb-4">✨ The Pasteboard Manifesto</h2>
-      <div className="space-y-4 prose prose-invert prose-slate max-w-none">
+      <div className="space-y-4 prose prose-invert prose-p:text-[#C7B6FF] prose-h3:text-white max-w-none">
         <p>We believe in tools that are small, human‑scaled, and transparent. In a world where every keystroke and every file is siphoned into distant servers, we choose to keep our words, images, and sketches close — shared only with those in the same room, the same network, the same moment.</p>
         
         <h3 className="font-semibold text-white">🌐 Local First</h3>
@@ -31,7 +31,7 @@ const ManifestoContent: React.FC<{ onClose: () => void }> = ({ onClose }) => (
       </div>
        <button 
         onClick={onClose} 
-        className="mt-6 bg-indigo-800 text-indigo-50 font-semibold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="mt-6 bg-[#4B32A8] text-white font-semibold py-2 px-4 rounded-lg hover:bg-[#5F40C6] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0A061F] focus:ring-[#9A86E8]"
       >
         Close
       </button>
@@ -39,8 +39,11 @@ const ManifestoContent: React.FC<{ onClose: () => void }> = ({ onClose }) => (
   </div>
 );
 
+interface HeaderProps {
+    serverAddress: string;
+}
 
-const Header: React.FC = () => {
+const Header: React.FC<HeaderProps> = ({ serverAddress }) => {
     const [showManifesto, setShowManifesto] = useState(false);
 
     return (
@@ -51,10 +54,19 @@ const Header: React.FC = () => {
                         <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                             Pasteboard
                         </h1>
+                         {serverAddress && (
+                            <div className="hidden sm:flex items-center gap-2 bg-[#1E1A33] px-3 py-1.5 rounded-full">
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                <span className="text-sm font-mono text-[#9A86E8]">{serverAddress}</span>
+                            </div>
+                        )}
                     </div>
                     <button 
                         onClick={() => setShowManifesto(true)}
-                        className="p-2 rounded-full text-indigo-300 hover:bg-slate-800 hover:text-white transition-colors"
+                        className="p-2 rounded-full text-[#C7B6FF] hover:bg-[#1E1A33] hover:text-white transition-colors"
                         aria-label="Show Manifesto"
                     >
                         <InfoIcon className="w-6 h-6" />

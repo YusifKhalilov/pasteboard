@@ -68,8 +68,8 @@ const wss = new WebSocketServer({ server });
 wss.on('connection', (ws) => {
     console.log('Client connected');
 
-    // Send initial list of items to the newly connected client
-    ws.send(JSON.stringify({ type: 'INIT', payload: items }));
+    // Send initial list of items and server info to the newly connected client
+    ws.send(JSON.stringify({ type: 'INIT', payload: { items, serverIp: `${serverIp}:${port}` } }));
 
     ws.on('message', (message) => {
         try {
