@@ -51,6 +51,9 @@ const App: React.FC = () => {
             setItems((prevItems) => 
               prevItems.filter(item => item.id !== message.payload.id)
             );
+          } else if (message.type === 'RESET_ITEMS') {
+            setItems([]);
+            setAiResponses({});
           }
         };
 
@@ -185,15 +188,24 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleReset = useCallback(() => {
+    if (window.confirm('Are you sure you want to delete all items? This action cannot be undone.')) {
+        if (ws.current?.readyState === WebSocket.OPEN) {
+            ws.current.send(JSON.stringify({ type: 'RESET_ITEMS' }));
+        }
+    }
+  }, []);
+
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Header serverAddress={serverAddress} />
+      <Header serverAddress={serverAddress} onReset={handleReset} />
       <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="space-y-8">
           <PasteboardInput onItemsAdd={handleItemsAdd} />
 
           {items.length === 0 ? (
-            <div className="text-center py-16 text-indigo-400">
+            <div className="text-center py-16 text-[#A8C5B3]">
               <p className="text-lg">Your pasteboard is empty.</p>
               <p>It's a blank canvas for your thoughts.</p>
             </div>
@@ -213,7 +225,7 @@ const App: React.FC = () => {
           )}
         </div>
       </main>
-      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 text-center text-xs text-indigo-500">
+      <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 text-center text-xs text-[#A8C5B3]/70">
         <p>This pasteboard is ephemeral. Content is stored in server memory and will be lost on server restart.</p>
       </footer>
     </div>

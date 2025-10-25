@@ -13,7 +13,7 @@ interface ItemCardProps {
 
 const AiResponseDisplay: React.FC<{ response: string }> = ({ response }) => (
     <div className="mt-3 pt-3">
-        <p className="text-sm text-fuchsia-300 whitespace-pre-wrap font-sans">{response}</p>
+        <p className="text-sm text-[#C37DFF] whitespace-pre-wrap font-sans">{response}</p>
     </div>
 );
 
@@ -42,7 +42,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
     switch (item.type) {
       case ItemType.TEXT:
         return (
-          <p className="text-indigo-200 whitespace-pre-wrap break-words font-mono text-sm">
+          <p className="text-[#F0EAD6] whitespace-pre-wrap break-words font-mono text-sm">
             {item.content}
           </p>
         );
@@ -57,10 +57,10 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
       case ItemType.FILE:
         return (
           <div className="flex items-center gap-4">
-            <FileIcon className="w-10 h-10 text-indigo-400 flex-shrink-0" />
+            <FileIcon className="w-10 h-10 text-[#4ECDC4] flex-shrink-0" />
             <div className='flex-grow truncate min-w-0'>
-              <p className="font-semibold text-indigo-100 truncate">{item.content}</p>
-              <p className="text-xs text-indigo-400">{item.fileType}</p>
+              <p className="font-semibold text-[#F0EAD6] truncate">{item.content}</p>
+              <p className="text-xs text-[#A8C5B3]">{item.fileType}</p>
             </div>
           </div>
         );
@@ -72,10 +72,10 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
   const canUseAi = process.env.API_KEY && (item.type === ItemType.TEXT || (item.type === ItemType.IMAGE && !!item.file));
 
   return (
-    <div className="relative bg-slate-900/70 backdrop-blur-sm p-4 rounded-xl flex flex-col w-full">
+    <div className="relative bg-[#0F2D27]/70 backdrop-blur-sm p-4 rounded-xl flex flex-col w-full">
        <button 
         onClick={() => onItemDelete(item.id)}
-        className="absolute top-1.5 right-1.5 p-1.5 rounded-full text-indigo-300 hover:bg-slate-800 hover:text-white transition-colors z-10"
+        className="absolute top-1.5 right-1.5 p-1.5 rounded-full text-[#A8C5B3] bg-[#0F2D27]/50 hover:bg-[#FF6B6B] hover:text-white transition-colors z-10"
         aria-label="Delete item"
       >
         <TrashIcon className="w-4 h-4" />
@@ -90,8 +90,8 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
                     onClick={handleCopy}
                     className={`flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-200 ${
                         copied 
-                        ? 'bg-sky-500/20 text-sky-400'
-                        : 'bg-slate-800 text-indigo-200 hover:bg-slate-700'
+                        ? 'bg-[#4ECDC4]/20 text-[#4ECDC4]'
+                        : 'bg-[#0F3830] text-[#F0EAD6] hover:bg-[#1a4a40]'
                     }`}
                 >
                     {copied ? (
@@ -116,8 +116,8 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
                     onClick={handleDownloadClick}
                     className={`flex-1 flex items-center justify-center gap-2 text-sm font-semibold px-3 py-1.5 rounded-md transition-colors duration-200 ${
                         isDownloading
-                        ? 'bg-indigo-500/20 text-indigo-300 cursor-wait'
-                        : 'bg-slate-800 text-indigo-200 hover:bg-slate-700'
+                        ? 'bg-[#FFD166]/20 text-[#FFD166] cursor-wait'
+                        : 'bg-[#0F3830] text-[#F0EAD6] hover:bg-[#1a4a40]'
                     }`}
                 >
                     {isDownloading ? (
@@ -144,11 +144,11 @@ const ItemCard: React.FC<ItemCardProps> = ({ item, onAiAction, onItemDelete, isL
                     <button
                         onClick={() => onAiAction(item)}
                         disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-fuchsia-400 bg-fuchsia-500/20 rounded-md hover:bg-fuchsia-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-[#C37DFF] bg-[#C37DFF]/20 rounded-md hover:bg-[#C37DFF]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isLoading ? (
                             <>
-                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-fuchsia-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-[#C37DFF]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>

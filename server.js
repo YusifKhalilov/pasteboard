@@ -113,6 +113,35 @@ wss.on('connection', (ws) => {
                         }
                     });
                 }
+            } else if (data.type === 'RESET_ITEMS') {
+                console.log('Resetting all items.');
+                
+                // Clear in-memory store
+                items = [];
+
+                // Asynchronously delete all files in uploads directory
+                fs.readdir(uploadsDir, (err, files) => {
+                    if (err) {
+                        console.error("Error reading uploads directory for reset:", err);
+                        return;
+                    };
+
+                    for (const file of files) {
+                        fs.unlink(path.join(uploadsDir, file), err => {
+                            if (err) {
+                                console.error(`Error deleting file ${file} during reset:`, err);
+                            };
+                        });
+                    }
+                    console.log('All uploaded files have been scheduled for deletion.');
+                });
+                
+                // Broadcast the reset to all clients
+                wss.clients.forEach((client) => {
+                    if (client.readyState === 1) { // WebSocket.OPEN
+                        client.send(JSON.stringify({ type: 'RESET_ITEMS' }));
+                    }
+                });
             }
         } catch (e) {
             console.error('Failed to parse message or invalid message format:', e);

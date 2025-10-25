@@ -98,8 +98,8 @@ const PasteboardInput: React.FC<PasteboardInputProps> = ({ onItemsAdd }) => {
       onDragOver={handleDragEvents}
       onDragLeave={handleDragEvents}
       onPaste={handlePaste}
-      className={`relative bg-slate-900/50 rounded-2xl p-4 transition-all duration-300 min-h-[144px] flex flex-col justify-center items-center ${
-        isDragging ? 'bg-indigo-950/80' : 'hover:bg-slate-900/80'
+      className={`relative bg-[#0F2D27]/50 rounded-2xl p-4 transition-all duration-300 min-h-[144px] flex flex-col justify-center items-center ${
+        isDragging ? 'bg-[#FF6B6B]/30' : 'hover:bg-[#0F2D27]/80'
       }`}
     >
         <input
@@ -116,7 +116,7 @@ const PasteboardInput: React.FC<PasteboardInputProps> = ({ onItemsAdd }) => {
                  <div className="flex flex-col sm:flex-row gap-4">
                     <button
                         onClick={() => setMode('text')}
-                        className="flex items-center justify-center gap-3 w-48 px-4 py-3 bg-slate-800 text-indigo-100 font-semibold rounded-lg hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0d0a1a] focus:ring-slate-500"
+                        className="flex items-center justify-center gap-3 w-48 px-4 py-3 bg-[#0F3830] text-[#F0EAD6] font-semibold rounded-lg hover:bg-[#1a4a40] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0A1D1A] focus:ring-[#4ECDC4]"
                         aria-label="Add text"
                     >
                         <TextIcon className="w-5 h-5" />
@@ -124,14 +124,14 @@ const PasteboardInput: React.FC<PasteboardInputProps> = ({ onItemsAdd }) => {
                     </button>
                     <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center justify-center gap-3 w-48 px-4 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-500 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0d0a1a] focus:ring-indigo-500"
+                        className="flex items-center justify-center gap-3 w-48 px-4 py-3 bg-[#FF6B6B] text-black font-bold rounded-lg hover:bg-[#E55A5A] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0A1D1A] focus:ring-[#FFD166]"
                         aria-label="Upload a file"
                     >
                         <UploadIcon className="w-5 h-5" />
                         <span>Upload File</span>
                     </button>
                 </div>
-                <p className="text-indigo-400 text-sm mt-4">Or drop files, or paste anything.</p>
+                <p className="text-[#A8C5B3] text-sm mt-4">Or drop files, or paste anything.</p>
             </div>
         )}
 
@@ -143,19 +143,19 @@ const PasteboardInput: React.FC<PasteboardInputProps> = ({ onItemsAdd }) => {
                     onChange={(e) => setText(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Type here and press Enter to submit..."
-                    className="w-full flex-grow p-2 bg-transparent rounded-lg resize-none focus:outline-none focus:ring-0 text-indigo-100 placeholder:text-indigo-400 min-h-[80px]"
+                    className="w-full flex-grow p-2 bg-transparent rounded-lg resize-none focus:outline-none focus:ring-0 text-[#F0EAD6] placeholder:text-[#A8C5B3] min-h-[80px]"
                     aria-label="Text input"
                 />
                 <div className="flex justify-end gap-2 mt-2">
-                    <button onClick={() => { setMode('choice'); setText(''); }} className="px-3 py-1 text-sm font-semibold text-indigo-200 bg-slate-800 rounded-md hover:bg-slate-700">Cancel</button>
-                    <button onClick={handleTextSubmit} className="px-3 py-1 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-500 disabled:opacity-50" disabled={!text.trim()}>Submit</button>
+                    <button onClick={() => { setMode('choice'); setText(''); }} className="px-3 py-1 text-sm font-semibold text-[#F0EAD6] bg-[#0F3830] rounded-md hover:bg-[#1a4a40]">Cancel</button>
+                    <button onClick={handleTextSubmit} className="px-3 py-1 text-sm font-semibold text-black font-bold bg-[#FF6B6B] rounded-md hover:bg-[#E55A5A] disabled:opacity-50" disabled={!text.trim()}>Submit</button>
                 </div>
             </div>
         )}
 
        {isDragging && (
-        <div className="absolute inset-0 bg-indigo-900/50 rounded-2xl flex items-center justify-center pointer-events-none z-10">
-          <p className="text-indigo-300 font-semibold text-lg">Drop to add</p>
+        <div className="absolute inset-0 bg-[#FF6B6B]/50 rounded-2xl flex items-center justify-center pointer-events-none z-10">
+          <p className="text-white font-semibold text-lg">Drop to add</p>
         </div>
       )}
     </div>
